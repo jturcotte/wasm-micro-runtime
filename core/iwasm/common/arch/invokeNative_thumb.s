@@ -80,7 +80,7 @@ call_func1:
         mov     r2, lr          /* restore r2 */
 
 call_func:
-        blx     ip
+        bl      call_func2
         add     sp, sp, r6       /* restore sp */
 
 return:
@@ -89,3 +89,6 @@ return:
         pop     {r4, r5, r6, r7}
         mov     lr, r3
         bx      lr
+
+call_func2:
+        bx      ip
