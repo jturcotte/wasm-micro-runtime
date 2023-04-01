@@ -1576,6 +1576,7 @@ ceil(double x)
     return freebsd_ceil(x);
 }
 
+#ifndef BH_PLATFORM_RUST_NO_STD
 double
 fmin(double x, double y)
 {
@@ -1587,6 +1588,7 @@ fmax(double x, double y)
 {
     return x > y ? x : y;
 }
+#endif
 
 double
 rint(double x)
@@ -1612,11 +1614,13 @@ trunc(double x)
     return (x > 0) ? freebsd_floor(x) : freebsd_ceil(x);
 }
 
+#ifndef BH_PLATFORM_RUST_NO_STD
 int
 signbit(double x)
 {
     return ((__HI(x) & 0x80000000) >> 31);
 }
+#endif
 
 float
 fabsf(float x)
@@ -1648,6 +1652,7 @@ floorf(float x)
     return freebsd_floorf(x);
 }
 
+#ifndef BH_PLATFORM_RUST_NO_STD
 float
 fminf(float x, float y)
 {
@@ -1659,6 +1664,7 @@ fmaxf(float x, float y)
 {
     return freebsd_fmaxf(x, y);
 }
+#endif
 
 #ifndef BH_HAS_SQRTF
 float
