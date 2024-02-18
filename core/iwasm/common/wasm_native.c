@@ -16,6 +16,12 @@
 #include "../libraries/thread-mgr/thread_manager.h"
 #endif
 
+#if !defined(BH_PLATFORM_RUST_NO_STD)
+#define ENABLE_QUICKSORT 1
+#else
+#define ENABLE_QUICKSORT 0
+#endif
+
 static NativeSymbolsList g_native_symbols_list = NULL;
 
 #if WASM_ENABLE_LIBC_WASI != 0
@@ -158,26 +164,52 @@ check_symbol_signature(const WASMType *type, const char *signature)
     return true;
 }
 
+#if ENABLE_QUICKSORT == 0
+static void
+sort_symbol_ptr(NativeSymbol *native_symbols, uint32 n_native_symbols)
+{
+    uint32 i, j;
+    NativeSymbol temp;
+
+    for (i = 0; i < n_native_symbols - 1; i++) {
+        for (j = i + 1; j < n_native_symbols; j++) {
+            if (strcmp(native_symbols[i].symbol, native_symbols[j].symbol)
+                > 0) {
+                temp = native_symbols[i];
+                native_symbols[i] = native_symbols[j];
+                native_symbols[j] = temp;
+            }
+        }
+    }
+}
+#else
 static int
 native_symbol_cmp(const void *native_symbol1, const void *native_symbol2)
 {
     return strcmp(((const NativeSymbol *)native_symbol1)->symbol,
                   ((const NativeSymbol *)native_symbol2)->symbol);
 }
+#endif /* end of ENABLE_QUICKSORT */
 
 static void *
 lookup_symbol(NativeSymbol *native_symbols, uint32 n_native_symbols,
               const char *symbol, const char **p_signature, void **p_attachment)
 {
-    NativeSymbol *native_symbol, key = { 0 };
+    int low = 0, mid, ret;
+    int high = (int32)n_native_symbols - 1;
 
-    key.symbol = symbol;
-
-    if ((native_symbol = bsearch(&key, native_symbols, n_native_symbols,
-                                 sizeof(NativeSymbol), native_symbol_cmp))) {
-        *p_signature = native_symbol->signature;
-        *p_attachment = native_symbol->attachment;
-        return native_symbol->func_ptr;
+    while (low <= high) {
+        mid = (low + high) / 2;
+        ret = strcmp(symbol, native_symbols[mid].symbol);
+        if (ret == 0) {
+            *p_signature = native_symbols[mid].signature;
+            *p_attachment = native_symbols[mid].attachment;
+            return native_symbols[mid].func_ptr;
+        }
+        else if (ret < 0)
+            high = mid - 1;
+        else
+            low = mid + 1;
     }
 
     return NULL;
@@ -264,8 +296,13 @@ register_natives(const char *module_name, NativeSymbol *native_symbols,
     node->next = g_native_symbols_list;
     g_native_symbols_list = node;
 
+
+#if ENABLE_QUICKSORT == 0
+    sort_symbol_ptr(native_symbols, n_native_symbols);
+#else
     qsort(native_symbols, n_native_symbols, sizeof(NativeSymbol),
           native_symbol_cmp);
+#endif
 
     return true;
 }
