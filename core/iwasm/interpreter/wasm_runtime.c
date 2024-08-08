@@ -3232,12 +3232,14 @@ wasm_interp_dump_call_stack(struct WASMExecEnv *exec_env, bool print, char *buf,
         if (frame.func_name_wp == NULL) {
             line_length =
                 snprintf(line_buf, sizeof(line_buf),
-                         "#%02" PRIu32 " $f%" PRIu32 "\n", n, frame.func_index);
+                         "#%02" PRIu32 " $f%" PRIu32 " %c %02" PRIi32 "\n", n,
+                         frame.func_index, frame.func_offset < 0 ? '-' : '+', abs(frame.func_offset));
         }
         else {
             line_length =
-                snprintf(line_buf, sizeof(line_buf), "#%02" PRIu32 " %s\n", n,
-                         frame.func_name_wp);
+                snprintf(line_buf, sizeof(line_buf),
+                         "#%02" PRIu32 " %s %c %02" PRIi32 "\n", n,
+                         frame.func_name_wp, frame.func_offset < 0 ? '-' : '+', abs(frame.func_offset));
         }
 
         if (line_length >= sizeof(line_buf)) {
